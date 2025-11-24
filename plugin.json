@@ -1,10 +1,7 @@
 {
-  "app": "dialogreader",
   "name": "Dialog Reader",
-  "version": "1.0.0",
-  "description": "Reads RS3 NPC dialogue out loud",
-  "author": "HolyBucket",
   "main": "index.html",
-  "category": "utility",
+  "version": "1.0.0",
+  "description": "Reads RS3 dialogue",
   "permissions": ["gamecapture", "overlays"]
 }

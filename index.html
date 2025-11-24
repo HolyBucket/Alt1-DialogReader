@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Alt1 Dialog Reader</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+    }
+    #state {
+      font-size: 18px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="state">Initializing...</div>
+  <script>
+    (async () => {
+      const stateEl = document.getElementById("state");
+      let lastSpoken = "";
+
+      function setState(text) {
+        stateEl.textContent = text;
+      }
+
+      function speakText(text) {
+        return new Promise(resolve => {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.rate = 1.0;
+          utter.onend = resolve;
+          window.speechSynthesis.speak(utter);
+        });
+      }
+
+      setState("Searching for dialog box");
+
+      // Check every 2 seconds for new dialog text
+      setInterval(async () => {
+        if (stateEl.textContent === "Reading") return;  // skip while speaking
+        setState("Searching for dialog box");
+
+        try {
+          // Capture the game screen
+          const img = await alt1.captureRect(0, 0, window.innerWidth, window.innerHeight);
+
+          // Perform OCR on the captured image
+          let lines = await alt1.ocr.parse(img);
+          if (!Array.isArray(lines)) lines = [lines];
+
+          // Combine all lines that look like dialog text
+          let dialogLines = lines.filter(l => l.trim() && !l.toLowerCase().includes("continue"));
+          let dialog = dialogLines.join(" ").trim();
+
+          if (dialog && dialog !== lastSpoken) {
+            lastSpoken = dialog;
+            setState("Reading");
+            await speakText(dialog);
+            setState("Waiting for more");
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }, 2000);
+    })();
+  </script>
+</body>
+</html>

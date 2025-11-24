@@ -1,8 +1,17 @@
 {
-  "name": "Dialog Reader",
-  "description": "Læs RuneScape 3 dialog og læs det højt",
-  "author": "DitNavn",
+  "appName": "Dialog Reader",
+  "appUrl": "index.html",
+  "configUrl": "index.html",
+  "iconUrl": "icon.png",
   "version": "1.0.0",
-  "main": "main.js",
-  "type": "rs3"
+  "defaultWidth": 300,
+  "defaultHeight": 150,
+  "minWidth": 300,
+  "minHeight": 150,
+  "maxWidth": 400,
+  "maxHeight": 200,
+  "permissions": {
+    "captureArea": true,
+    "readText": true
+  }
 }

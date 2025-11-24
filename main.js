@@ -1,43 +1,49 @@
-let status = document.getElementById("status");
+let statusBox = document.getElementById("status");
+let lastDialog = "";
+const scanIntervalMs = 800;
 
-function tick() {
-  if (!window.alt1 || !window.alt1.overlay) {
-    status.innerText = "Waiting for Alt1 overlay permission...";
-    return setTimeout(tick, 500);
-  }
+// Wait until Alt1 loads and a1lib becomes available
+a1lib.on("loaded", () => {
+    statusBox.textContent = "Alt1 API loaded – scanning...";
+    startScanning();
+});
 
-  status.innerText = "Plugin running – waiting for dialogue...";
-  pollDialogue();
+// Fallback for when Alt1 isn't available (browser)
+if (!window.alt1) {
+    statusBox.textContent = "Alt1 ikke fundet – kør dette i Alt1.";
 }
 
-function pollDialogue() {
-  try {
-    let capture = a1lib.captureHoldFullRs();
-    if (!capture) return setTimeout(pollDialogue, 300);
-
-    let text = capture.readtext({
-      colors: [
-        a1lib.mixcolor(255,255,255),
-        a1lib.mixcolor(220,220,220)
-      ],
-      small: false,
-      backwards: false,
-    });
-
-    if (text.text && text.text.trim().length > 4) {
-      speak(text.text);
-    }
-  } catch (e) {
-    status.innerText = "Error: " + e.message;
-  }
-
-  setTimeout(pollDialogue, 500);
+function speak(text) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.1;
+    speechSynthesis.speak(u);
 }
 
-function speak(t) {
-  let utter = new SpeechSynthesisUtterance(t);
-  utter.lang = "en-US";
-  speechSynthesis.speak(utter);
+function startScanning() {
+    setInterval(() => {
+        if (!window.alt1 || !alt1.permissionPixel) {
+            statusBox.textContent = "Mangler tilladelse: view screen";
+            return;
+        }
+
+        if (!alt1.rsActive) {
+            statusBox.textContent = "RuneScape ikke aktivt...";
+            return;
+        }
+
+        try {
+            // Try capture the bottom dialog area
+            let img = alt1.captureArea(80, 650, 1000, 250);
+            let ocr = a1lib.readText(img).text.trim();
+
+            if (ocr && ocr !== lastDialog) {
+                lastDialog = ocr;
+                speak(ocr);
+                statusBox.textContent = "Dialog: " + ocr;
+            }
+        } catch (e) {
+            statusBox.textContent = "Fejl: " + e;
+            console.error(e);
+        }
+    }, scanIntervalMs);
 }
-  
-tick();

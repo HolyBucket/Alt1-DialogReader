@@ -1,10 +1,14 @@
 {
-  "app": "dialogreader",
   "name": "Dialog Reader",
   "version": "1.0.0",
-  "description": "Reads RS3 NPC dialogue out loud",
+  "description": "Reads RS3 dialogue out loud",
   "author": "HolyBucket",
   "main": "index.html",
-  "category": "utility",
-  "permissions": ["gamecapture", "overlays"]
+  "defaultWidth": 300,
+  "defaultHeight": 150,
+  "minimumWidth": 300,
+  "minimumHeight": 150,
+  "maximumWidth": 400,
+  "maximumHeight": 200,
+  "permissions": ["gamecapture","overlays"]
 }

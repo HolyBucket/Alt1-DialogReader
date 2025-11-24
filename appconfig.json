@@ -1,5 +1,5 @@
 {
-  "url": "index.html",
+  "appurl": "index.html",
   "name": "Alt1 RS3 Dialog Reader",
   "description": "Reads RS3 NPC dialog windows aloud using the Web Speech API",
   "author": "YourName",

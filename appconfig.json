@@ -1,7 +1,9 @@
 {
-  "name": "Alt1 Dialog Reader",
-  "version": "1.1",
-  "description": "Reads NPC dialog in RuneScape 3 and speaks it out loud",
-  "author": "Holybucket",
-  "appUrl": "index.html"
+  "url": "index.html",
+  "name": "Alt1 RS3 Dialog Reader",
+  "description": "Reads RS3 NPC dialog windows aloud using the Web Speech API",
+  "author": "YourName",
+  "version": "1.0.0",
+  "game": "rs3",
+  "icon": "icon.png"
 }

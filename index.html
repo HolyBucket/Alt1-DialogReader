@@ -2,24 +2,87 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Dialog Reader</title>
-
-  <!-- Alt1 JavaScript Libraries -->
-  <script src="https://alt1toolkit.com/content/a1lib.js"></script>
-
+  <title>Alt1 Dialog Reader</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: #111;
-      color: #0f0;
+      margin: 0;
       padding: 10px;
+      font-family: Arial, sans-serif;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+    }
+    #state {
+      font-size: 18px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h2>Dialog Reader</h2>
-  <div id="status">Loader Alt1 API...</div>
+  <div id="state">Initializing...</div>
+  <script>
+    (async () => {
+      const stateEl = document.getElementById("state");
+      let lastSpoken = "";
 
-  <script src="main.js"></script>
+      function setState(text) {
+        stateEl.textContent = text;
+      }
+
+      function speakText(text) {
+        return new Promise(resolve => {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.rate = 1.0;
+          utter.onend = resolve;
+          window.speechSynthesis.speak(utter);
+        });
+      }
+
+      setState("Searching for dialog box");
+
+      // Check every 2 seconds for new dialog text
+      setInterval(async () => {
+        if (stateEl.textContent === "Reading") return;  // skip while speaking
+        setState("Searching for dialog box");
+        try {
+          // Capture the entire game window (screen-capture needs Alt1 permission)
+          const img = await alt1.captureRect(0, 0, window.innerWidth, window.innerHeight);
+
+          // Perform OCR on the captured image
+          let lines = await alt1.ocr.parse(img);
+          if (!Array.isArray(lines)) lines = [lines];
+
+          // Look for the "Click here to continue" line
+          const idx = lines.findIndex(l => /click here to continue/i.test(l));
+          if (idx >= 0) {
+            // Combine all lines above that into one string
+            let dialog = "";
+            for (let i = 0; i < idx; i++) {
+              if (lines[i].trim()) {
+                if (dialog) dialog += " ";
+                dialog += lines[i].trim();
+              }
+            }
+            dialog = dialog.trim();
+            if (dialog) {
+              // Optionally remove NPC name if it appears (e.g. "NPC Name: Hello")
+              const colon = dialog.indexOf(":");
+              if (colon > 0 && colon < 20) {
+                dialog = dialog.substring(colon + 1).trim();
+              }
+              // Speak only if new
+              if (dialog && dialog !== lastSpoken) {
+                lastSpoken = dialog;
+                setState("Reading");
+                await speakText(dialog);
+                setState("Waiting for more");
+              }
+            }
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }, 2000);
+    })();
+  </script>
 </body>
 </html>

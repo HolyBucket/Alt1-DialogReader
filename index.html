@@ -1,26 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <title>Dialog Reader</title>
 
-  <!-- IMPORTANT: Load Alt1 API -->
-  <script src="https://alt1lib.github.io/alt1lib.js"></script>
+  <!-- Alt1 JavaScript Libraries -->
+  <script src="https://alt1toolkit.com/content/a1lib.js"></script>
 
-  <script>
-    // Allow Alt1 to verify this app
-    if (window.alt1) {
-      alt1.identifyAppUrl("./plugin.json");
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #0f0;
+      padding: 10px;
     }
-
-    window.addEventListener("load", () => {
-      document.getElementById("status").innerText = "Alt1 API loaded";
-    });
-  </script>
+  </style>
 </head>
-
 <body>
   <h2>Dialog Reader</h2>
-  <div id="status">loader Alt1 API...</div>
+  <div id="status">Loader Alt1 API...</div>
 
   <script src="main.js"></script>
 </body>

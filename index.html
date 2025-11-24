@@ -39,33 +39,41 @@
 
       setState("Searching for dialog box");
 
-      // Check every 2 seconds for new dialog text
+      // Alt1 element ID for NPC dialog in RS3: "npc_dialog"
+      const npcDialogElement = await alt1.findUiElement("npc_dialog");
+
+      if (!npcDialogElement) {
+        setState("Dialog box not found. Make sure RS3 is running.");
+        return;
+      }
+
+      // Watch for changes in the dialog box
       setInterval(async () => {
-        if (stateEl.textContent === "Reading") return;  // skip while speaking
-        setState("Searching for dialog box");
-
         try {
-          // Capture the game screen
-          const img = await alt1.captureRect(0, 0, window.innerWidth, window.innerHeight);
+          const rect = await npcDialogElement.rect(); // get dialog box rectangle
+          const img = await alt1.captureRect(rect.x, rect.y, rect.width, rect.height);
 
-          // Perform OCR on the captured image
+          // OCR only inside dialog box
           let lines = await alt1.ocr.parse(img);
           if (!Array.isArray(lines)) lines = [lines];
 
-          // Combine all lines that look like dialog text
-          let dialogLines = lines.filter(l => l.trim() && !l.toLowerCase().includes("continue"));
-          let dialog = dialogLines.join(" ").trim();
+          // Combine all lines
+          let dialog = lines.filter(l => l.trim()).join(" ").trim();
 
+          // Only read new dialog
           if (dialog && dialog !== lastSpoken) {
             lastSpoken = dialog;
             setState("Reading");
             await speakText(dialog);
             setState("Waiting for more");
+          } else {
+            setState("Searching for dialog box");
           }
+
         } catch (err) {
           console.error(err);
         }
-      }, 2000);
+      }, 500); // check twice per second for faster detection
     })();
   </script>
 </body>

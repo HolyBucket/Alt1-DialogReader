@@ -1,80 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Alt1 Dialog Reader</title>
+  <!-- Include Alt1 base and dialog libraries from jsDelivr -->
+  <script src="https://cdn.jsdelivr.net/npm/@alt1/base@1.0.0-alpha.7/dist/index.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@alt1/dialog@1.0.0-alpha.7/dist/index.bundle.js"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 10px;
-      font-family: Arial, sans-serif;
-      background-color: rgba(0,0,0,0.8);
-      color: #fff;
-    }
-    #state {
-      font-size: 18px;
-      text-align: center;
+    body { margin:0; font-family: sans-serif; background: rgba(0,0,0,0); }
+    #status { 
+      position: absolute;
+      top: 10px; left: 10px;
+      padding: 5px 10px; background: rgba(0,0,0,0.6); color: #fff;
+      border-radius: 4px; font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div id="state">Initializing...</div>
+  <!-- Minimal overlay UI -->
+  <div id="status">Searching for dialog</div>
+
   <script>
-    (async () => {
-      const stateEl = document.getElementById("state");
-      let lastSpoken = "";
+    // Create a DialogReader (uses Alt1 image matching + OCR under the hood)
+    const reader = new alt1.DialogReader();
 
-      function setState(text) {
-        stateEl.textContent = text;
-      }
+    let lastText = "";
+    let speaking = false;
 
-      function speakText(text) {
-        return new Promise(resolve => {
-          const utter = new SpeechSynthesisUtterance(text);
-          utter.rate = 1.0;
-          utter.onend = resolve;
+    // Utility to update status label
+    function setStatus(text) {
+      document.getElementById("status").innerText = text;
+    }
+
+    // Poll every 500ms for dialog changes
+    setInterval(async () => {
+      // Attempt to read dialog; read() returns an object or false/null
+      let result = reader.read();
+      if (result && result.text) {
+        // Join all lines of text into one string
+        const fullText = result.text.join(" ").trim();
+        if (fullText && fullText !== lastText) {
+          // New dialog content detected
+          lastText = fullText;
+          setStatus("Reading");
+          // Speak the dialog text
+          const utter = new SpeechSynthesisUtterance(fullText);
+          utter.onend = () => {
+            // After speaking, go to waiting state until text changes
+            setStatus("Waiting");
+            speaking = false;
+          };
+          speaking = true;
           window.speechSynthesis.speak(utter);
-        });
-      }
-
-      setState("Searching for dialog box");
-
-      // Alt1 element ID for NPC dialog in RS3: "npc_dialog"
-      const npcDialogElement = await alt1.findUiElement("npc_dialog");
-
-      if (!npcDialogElement) {
-        setState("Dialog box not found. Make sure RS3 is running.");
-        return;
-      }
-
-      // Watch for changes in the dialog box
-      setInterval(async () => {
-        try {
-          const rect = await npcDialogElement.rect(); // get dialog box rectangle
-          const img = await alt1.captureRect(rect.x, rect.y, rect.width, rect.height);
-
-          // OCR only inside dialog box
-          let lines = await alt1.ocr.parse(img);
-          if (!Array.isArray(lines)) lines = [lines];
-
-          // Combine all lines
-          let dialog = lines.filter(l => l.trim()).join(" ").trim();
-
-          // Only read new dialog
-          if (dialog && dialog !== lastSpoken) {
-            lastSpoken = dialog;
-            setState("Reading");
-            await speakText(dialog);
-            setState("Waiting for more");
-          } else {
-            setState("Searching for dialog box");
-          }
-
-        } catch (err) {
-          console.error(err);
         }
-      }, 500); // check twice per second for faster detection
-    })();
+      } else {
+        // No dialog open
+        lastText = "";
+        if (!speaking) {
+          setStatus("Searching for dialog");
+        }
+      }
+    }, 500);
   </script>
 </body>
 </html>

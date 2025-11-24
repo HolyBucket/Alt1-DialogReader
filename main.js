@@ -1,60 +1,49 @@
-// --- SETTINGS ---
+let statusBox = document.getElementById("status");
+let lastDialog = "";
 const scanIntervalMs = 800;
 
-// Track last spoken line
-let lastDialog = "";
+// Wait until Alt1 loads and a1lib becomes available
+a1lib.on("loaded", () => {
+    statusBox.textContent = "Alt1 API loaded – scanning...";
+    startScanning();
+});
 
-// HTML element for showing status
-const statusBox = document.getElementById("status");
+// Fallback for when Alt1 isn't available (browser)
+if (!window.alt1) {
+    statusBox.textContent = "Alt1 ikke fundet – kør dette i Alt1.";
+}
 
-// Small helper for speaking text
 function speak(text) {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.1;
-    speechSynthesis.speak(utter);
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.1;
+    speechSynthesis.speak(u);
 }
 
-// Main loop - runs in Alt1 environment
-function scanDialog() {
-    if (!window.alt1) {
-        statusBox.textContent = "Alt1 API ikke fundet...";
-        return;
-    }
-
-    if (!alt1.rsActive) {
-        statusBox.textContent = "RuneScape ikke aktivt...";
-        return;
-    }
-
-    try {
-        // Capture dialog text using Alt1OCR
-        const dialog = a1lib.readText(
-            alt1.captureArea(
-                // DEFAULT DIALOG REGION (works on standard client)
-                // X, Y, Width, Height
-                80, 700, 1000, 200
-            )
-        ).text.trim();
-
-        if (dialog.length > 0) {
-            statusBox.textContent = "Fundet dialog: " + dialog;
-
-            if (dialog !== lastDialog) {
-                lastDialog = dialog;
-                speak(dialog);
-            }
-        } else {
-            statusBox.textContent = "Ingen dialog";
+function startScanning() {
+    setInterval(() => {
+        if (!window.alt1 || !alt1.permissionPixel) {
+            statusBox.textContent = "Mangler tilladelse: view screen";
+            return;
         }
-    } catch (e) {
-        statusBox.textContent = "Fejl: " + e;
-        console.error(e);
-    }
+
+        if (!alt1.rsActive) {
+            statusBox.textContent = "RuneScape ikke aktivt...";
+            return;
+        }
+
+        try {
+            // Try capture the bottom dialog area
+            let img = alt1.captureArea(80, 650, 1000, 250);
+            let ocr = a1lib.readText(img).text.trim();
+
+            if (ocr && ocr !== lastDialog) {
+                lastDialog = ocr;
+                speak(ocr);
+                statusBox.textContent = "Dialog: " + ocr;
+            }
+        } catch (e) {
+            statusBox.textContent = "Fejl: " + e;
+            console.error(e);
+        }
+    }, scanIntervalMs);
 }
-
-// Update loop
-setInterval(scanDialog, scanIntervalMs);
-
-// Confirm JS loaded
-console.log("Dialog Reader loaded!");
-statusBox.textContent = "Plugin loaded – venter på dialog...";

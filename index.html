@@ -3,62 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <title>Alt1 Dialog Reader</title>
-  <!-- Include Alt1 base and dialog libraries from jsDelivr -->
   <script src="https://cdn.jsdelivr.net/npm/@alt1/base@1.0.0-alpha.7/dist/index.bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@alt1/dialog@1.0.0-alpha.7/dist/index.bundle.js"></script>
   <style>
     body { margin:0; font-family: sans-serif; background: rgba(0,0,0,0); }
-    #status { 
+    #status {
       position: absolute;
       top: 10px; left: 10px;
-      padding: 5px 10px; background: rgba(0,0,0,0.6); color: #fff;
-      border-radius: 4px; font-size: 14px;
+      padding: 5px 10px;
+      background: rgba(0,0,0,0.7);
+      color: #fff; border-radius: 4px;
+      font-size: 14px;
+    }
+    #debug {
+      position: absolute;
+      bottom: 10px; left: 10px;
+      padding: 5px; background: rgba(0,0,0,0.7);
+      color: #0f0; font-size: 12px; max-width: 300px;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
-  <!-- Minimal overlay UI -->
-  <div id="status">Searching for dialog</div>
-
+  <div id="status">Initializing…</div>
+  <div id="debug"></div>
   <script>
-    // Create a DialogReader (uses Alt1 image matching + OCR under the hood)
+    const statusEl = document.getElementById("status");
+    const debugEl = document.getElementById("debug");
     const reader = new alt1.DialogReader();
-
     let lastText = "";
     let speaking = false;
 
-    // Utility to update status label
-    function setStatus(text) {
-      document.getElementById("status").innerText = text;
+    function setStatus(s) {
+      statusEl.textContent = s;
     }
 
-    // Poll every 500ms for dialog changes
+    function logDebug(...args) {
+      const now = new Date().toLocaleTimeString();
+      debugEl.textContent = now + " — " + args.map(a => JSON.stringify(a)).join(" | ") + "\n" + debugEl.textContent;
+    }
+
+    setStatus("Searching for dialog");
+
     setInterval(async () => {
-      // Attempt to read dialog; read() returns an object or false/null
-      let result = reader.read();
-      if (result && result.text) {
-        // Join all lines of text into one string
-        const fullText = result.text.join(" ").trim();
-        if (fullText && fullText !== lastText) {
-          // New dialog content detected
-          lastText = fullText;
-          setStatus("Reading");
-          // Speak the dialog text
-          const utter = new SpeechSynthesisUtterance(fullText);
-          utter.onend = () => {
-            // After speaking, go to waiting state until text changes
-            setStatus("Waiting");
-            speaking = false;
-          };
-          speaking = true;
-          window.speechSynthesis.speak(utter);
+      try {
+        // Try to read via Alt1 DialogReader
+        const result = reader.read();
+        logDebug("DialogReader result", result);
+        if (result && result.text && Array.isArray(result.text)) {
+          const fullText = result.text.join(" ").trim();
+          logDebug("OCR‑text", fullText);
+          if (fullText && fullText !== lastText) {
+            lastText = fullText;
+            setStatus("Reading");
+            logDebug("New text → speaking", fullText);
+            const utter = new SpeechSynthesisUtterance(fullText);
+            utter.rate = 1.0;
+            utter.onend = () => {
+              speaking = false;
+              setStatus("Waiting for new dialog");
+              logDebug("Speech ended");
+            };
+            speaking = true;
+            window.speechSynthesis.speak(utter);
+          }
+        } else {
+          // No dialog detected
+          if (!speaking) {
+            setStatus("Searching for dialog box");
+          }
         }
-      } else {
-        // No dialog open
-        lastText = "";
-        if (!speaking) {
-          setStatus("Searching for dialog");
-        }
+      } catch (err) {
+        logDebug("Error in loop", err.toString());
+        console.error(err);
       }
     }, 500);
   </script>

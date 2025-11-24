@@ -1,17 +1,12 @@
 {
-  "appName": "Dialog Reader",
+  "name": "Dialog Reader",
   "appUrl": "index.html",
   "configUrl": "index.html",
-  "iconUrl": "icon.png",
   "version": "1.0.0",
   "defaultWidth": 300,
   "defaultHeight": 150,
-  "minWidth": 300,
-  "minHeight": 150,
-  "maxWidth": 400,
-  "maxHeight": 200,
-  "permissions": {
-    "captureArea": true,
-    "readText": true
-  }
+  "minimumWidth": 300,
+  "minimumHeight": 150,
+  "maximumWidth": 400,
+  "maximumHeight": 200
 }

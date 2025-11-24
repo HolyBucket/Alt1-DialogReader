@@ -1,0 +1,8 @@
+{
+  "name": "Dialog Reader",
+  "description": "Læs RuneScape 3 dialog og læs det højt",
+  "author": "DitNavn",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "rs3"
+}
